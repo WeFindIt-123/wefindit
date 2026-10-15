@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>WeFindIt — AI Travel Deals</title>
+<style>
+body{font-family:system-ui,sans-serif;max-width:720px;margin:40px auto;padding:0 20px;color:#111827}
+h1{margin-bottom:4px}
+.sub{color:#6b7280;margin-top:0}
+section{background:#f9fafb;padding:16px;border-radius:10px;margin:20px 0}
+input,button{padding:8px 12px;font-size:14px;border-radius:6px}
+input{border:1px solid #d1d5db;width:100%;box-sizing:border-box;margin-top:4px}
+button{background:#111827;color:#fff;border:none;cursor:pointer;margin-top:12px}
+.alert{border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin:10px 0;background:#fff}
+</style>
+</head>
+<body>
+<h1>WeFindIt</h1>
+<p class="sub">Your AI agent for travel deals</p>
+<section>
+<strong>Check a route</strong>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+<label>From<input id="from" value="JFK"></label>
+<label>To<input id="to" value="LHR"></label>
+</div>
+<button onclick="check()">Check for deals</button>
+</section>
+<div id="results"></div>
+<script>
+function check(){
+const from=document.getElementById("from").value||"JFK";
+const to=document.getElementById("to").value||"LHR";
+const price=Math.floor(380+Math.random()*250);
+const hotel=Math.floor(110+Math.random()*80);
+document.getElementById("results").innerHTML=`
+<h2>Results</h2>
+<article class="alert"><h3 style="margin:0 0 6px">Good deal: ${from} → ${to} from $${price}</h3>
+<p style="margin:0 0 6px">${from} → ${to} · Economy</p>
+<p style="margin:0;font-size:14px;color:#6b7280"><strong>Why:</strong> Under your typical budget.</p></article>
+<article class="alert"><h3 style="margin:0 0 6px">Hotel deal in ${to}: $${hotel}/night</h3>
+<p style="margin:0 0 6px">Boutique hotel · 4★ · Free cancellation</p>
+<p style="margin:0;font-size:14px;color:#6b7280"><strong>Why:</strong> Matches your preferences.</p></article>`;
+}
+</script>
+</body>
+</html>

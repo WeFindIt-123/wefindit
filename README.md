@@ -1,2 +1,5 @@
-# wefindit
-WeFindIt - AI travel deals agent
+# WeFindIt
+
+AI travel deals agent.
+
+Live site coming via Vercel.
