@@ -13,34 +13,51 @@ input,button{padding:8px 12px;font-size:14px;border-radius:6px}
 input{border:1px solid #d1d5db;width:100%;box-sizing:border-box;margin-top:4px}
 button{background:#111827;color:#fff;border:none;cursor:pointer;margin-top:12px}
 .alert{border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin:10px 0;background:#fff}
+.status{font-size:13px;color:#6b7280;margin-top:8px}
 </style>
 </head>
 <body>
 <h1>WeFindIt</h1>
-<p class="sub">Your AI agent for travel deals</p>
+<p class="sub">AI travel deals — live Duffel search</p>
 <section>
 <strong>Check a route</strong>
 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
 <label>From<input id="from" value="JFK"></label>
 <label>To<input id="to" value="LHR"></label>
 </div>
-<button onclick="check()">Check for deals</button>
+<button id="btn" onclick="check()">Check for deals</button>
+<div id="status" class="status"></div>
 </section>
 <div id="results"></div>
 <script>
-function check(){
-const from=document.getElementById("from").value||"JFK";
-const to=document.getElementById("to").value||"LHR";
-const price=Math.floor(380+Math.random()*250);
-const hotel=Math.floor(110+Math.random()*80);
-document.getElementById("results").innerHTML=`
-<h2>Results</h2>
-<article class="alert"><h3 style="margin:0 0 6px">Good deal: ${from} → ${to} from $${price}</h3>
-<p style="margin:0 0 6px">${from} → ${to} · Economy</p>
-<p style="margin:0;font-size:14px;color:#6b7280"><strong>Why:</strong> Under your typical budget.</p></article>
-<article class="alert"><h3 style="margin:0 0 6px">Hotel deal in ${to}: $${hotel}/night</h3>
-<p style="margin:0 0 6px">Boutique hotel · 4★ · Free cancellation</p>
-<p style="margin:0;font-size:14px;color:#6b7280"><strong>Why:</strong> Matches your preferences.</p></article>`;
+async function check(){
+  const from=document.getElementById("from").value||"JFK";
+  const to=document.getElementById("to").value||"LHR";
+  const btn=document.getElementById("btn");
+  const status=document.getElementById("status");
+  btn.disabled=true;
+  status.textContent="Searching…";
+  try{
+    const res=await fetch("/api/search",{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({origin:from,destination:to})
+    });
+    const data=await res.json();
+    status.textContent=data.source==="duffel"?"Live Duffel results":"Demo results (add DUFFEL_ACCESS_TOKEN for live)";
+    const offers=data.offers||[];
+    document.getElementById("results").innerHTML=
+      offers.length?offers.map(o=>`
+        <article class="alert">
+          <h3 style="margin:0 0 6px">${from} → ${to} from $${o.price}</h3>
+          <p style="margin:0 0 6px">${o.airline} · ${o.stops===0?"Nonstop":o.stops+" stop(s)"}</p>
+          <p style="margin:0;font-size:14px;color:#6b7280">Source: ${data.source}</p>
+        </article>`).join(""):"<p>No offers found.</p>";
+  }catch(e){
+    status.textContent="Error: "+e.message;
+  }finally{
+    btn.disabled=false;
+  }
 }
 </script>
 </body>
