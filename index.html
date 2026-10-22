@@ -144,9 +144,9 @@ async function search(){
     status.textContent = data.source==="duffel" ? "Live Duffel results" : "Demo results";
     let html = "";
     if(data.flights?.length){
-      html += "<h2>Flights</h2>" + data.flights.map(f=>`
+      html += "<h2>Flights (ranked by score)</h2>" + data.flights.map(f=>`
         <article class="alert">
-          <h3 style="margin:0 0 6px">${from} → ${to} from ${f.currency} ${f.price}</h3>
+          <h3 style="margin:0 0 6px">${from} → ${to} from ${f.currency} ${f.price} <span style="float:right;font-size:14px;color:#059669">${f.score||"—"}</span></h3>
           <p style="margin:0">${f.airline} · ${f.stops===0?"Nonstop":f.stops+" stop(s)"} · ${cabin}</p>
         </article>`).join("");
     }
