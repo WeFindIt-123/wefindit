@@ -115,7 +115,7 @@ if (ref) localStorage.setItem("wefindit_ref", ref);
 
 <div id="results"></div>
 
-<footer>WeFindIt · AI travel deals · Powered by Duffel</footer>
+<footer>WeFindIt · AI travel deals · Powered by Duffel · <a href="/privacy.html" style="color:#8b90a0">Privacy</a></footer>
 </div>
 
 <script type="module">
@@ -206,6 +206,21 @@ async function search(){
   }catch(e){ status.textContent="Error: "+e.message; }
   finally{ btn.disabled=false; }
 }
+</script>
+
+<div id="cookieBanner" style="display:none;position:fixed;bottom:0;left:0;right:0;background:#1a1d27;border-top:1px solid #2a2e3a;padding:16px 20px;z-index:100;font-size:14px">
+<div style="max-width:1000px;margin:0 auto;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap">
+<span>We use cookies for essential site functions and basic analytics. <a href="/privacy.html" style="color:#3b82f6">Privacy policy</a></span>
+<div style="display:flex;gap:8px">
+<button onclick="acceptCookies()" style="background:#3b82f6;color:#fff;border:none;padding:8px 16px;border-radius:6px;cursor:pointer;width:auto;margin:0">Accept</button>
+<button onclick="declineCookies()" style="background:transparent;border:1px solid #2a2e3a;color:#e8eaed;padding:8px 16px;border-radius:6px;cursor:pointer;width:auto;margin:0">Decline</button>
+</div>
+</div>
+</div>
+<script>
+function acceptCookies(){ localStorage.setItem("cookie_consent","accepted"); document.getElementById("cookieBanner").style.display="none"; }
+function declineCookies(){ localStorage.setItem("cookie_consent","declined"); document.getElementById("cookieBanner").style.display="none"; }
+if(!localStorage.getItem("cookie_consent")) document.getElementById("cookieBanner").style.display="block";
 </script>
 </body>
 </html>
