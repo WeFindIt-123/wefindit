@@ -17,11 +17,24 @@ button{background:#111827;color:#fff;border:none;cursor:pointer;margin-top:12px;
 .alert{border:1px solid #e5e7eb;border-radius:8px;padding:14px;margin:10px 0;background:#fff}
 .status{font-size:13px;color:#6b7280;margin-top:8px}
 .watch{font-size:12px;background:#e5e7eb;color:#111;border:none;padding:4px 8px;border-radius:4px;cursor:pointer}
+#auth{display:flex;gap:8px;align-items:end}
+#auth input{width:auto;flex:1}
 </style>
 </head>
 <body>
 <h1>WeFindIt</h1>
 <p class="sub">AI travel deals — flights + hotels</p>
+
+<section id="authSection">
+<strong>Account</strong>
+<div id="auth" style="margin-top:10px">
+<input id="email" type="email" placeholder="Email">
+<input id="password" type="password" placeholder="Password">
+<button onclick="signup()">Sign up</button>
+<button onclick="login()">Log in</button>
+</div>
+<div id="authStatus" class="status"></div>
+</section>
 
 <section>
 <strong>Search</strong>
@@ -42,28 +55,56 @@ button{background:#111827;color:#fff;border:none;cursor:pointer;margin-top:12px;
 
 <section>
 <strong>Watched routes</strong>
-<div id="watched" class="status">None yet</div>
+<div id="watched" class="status">Log in to save routes</div>
 </section>
 
 <script>
 document.getElementById("date").value = new Date(Date.now()+14*86400000).toISOString().slice(0,10);
 
-function getWatched(){ return JSON.parse(localStorage.getItem("wefindit_watched")||"[]"); }
-function setWatched(list){ localStorage.setItem("wefindit_watched", JSON.stringify(list)); renderWatched(); }
+let session = JSON.parse(localStorage.getItem("wefindit_session") || "null");
+
+function setAuthStatus(msg){ document.getElementById("authStatus").textContent = msg; }
 function renderWatched(){
-  const list = getWatched();
+  const list = session?.watched || [];
   document.getElementById("watched").innerHTML = list.length
-    ? list.map((w,i)=>`<div>${w.from} → ${w.to} · ${w.date} · ${w.cabin} <button class="watch" onclick="removeWatch(${i})">Remove</button></div>`).join("")
-    : "None yet";
+    ? list.map((w,i)=>`<div>${w.from} → ${w.to} · ${w.date} · ${w.cabin||"economy"} <button class="watch" onclick="unwatch(${i})">Remove</button></div>`).join("")
+    : (session ? "None yet" : "Log in to save routes");
 }
-function watchRoute(){
-  const w = { from:document.getElementById("from").value||"JFK", to:document.getElementById("to").value||"LHR", date:document.getElementById("date").value, cabin:document.getElementById("cabin").value };
-  const list = getWatched();
-  if(!list.some(x=>x.from===w.from && x.to===w.to && x.date===w.date)) list.push(w);
-  setWatched(list);
+if(session){ setAuthStatus("Logged in as " + session.email); renderWatched(); }
+
+async function signup(){
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const res = await fetch("/api/auth/signup",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});
+  const data = await res.json();
+  if(data.ok){ setAuthStatus("Account created — now log in"); }
+  else setAuthStatus(data.error || "Signup failed");
 }
-function removeWatch(i){ const list=getWatched(); list.splice(i,1); setWatched(list); }
-renderWatched();
+async function login(){
+  const email = document.getElementById("email").value;
+  const password = document.getElementById("password").value;
+  const res = await fetch("/api/auth/login",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email,password})});
+  const data = await res.json();
+  if(data.ok){
+    session = { email, password, watched: data.watched || [] };
+    localStorage.setItem("wefindit_session", JSON.stringify(session));
+    setAuthStatus("Logged in as " + email);
+    renderWatched();
+  } else setAuthStatus(data.error || "Login failed");
+}
+async function watchRoute(){
+  if(!session){ setAuthStatus("Log in first to watch routes"); return; }
+  const route = { from:document.getElementById("from").value||"JFK", to:document.getElementById("to").value||"LHR", date:document.getElementById("date").value, cabin:document.getElementById("cabin").value };
+  const res = await fetch("/api/auth/watch",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:session.email,password:session.password,route})});
+  const data = await res.json();
+  if(data.ok){ session.watched = data.watched; localStorage.setItem("wefindit_session", JSON.stringify(session)); renderWatched(); }
+}
+async function unwatch(i){
+  if(!session) return;
+  const res = await fetch("/api/auth/unwatch",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({email:session.email,password:session.password,index:i})});
+  const data = await res.json();
+  if(data.ok){ session.watched = data.watched; localStorage.setItem("wefindit_session", JSON.stringify(session)); renderWatched(); }
+}
 
 async function search(){
   const from=document.getElementById("from").value||"JFK";
