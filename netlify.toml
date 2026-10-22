@@ -3,6 +3,3 @@
 
 [functions]
   directory = "netlify/functions"
-
-[[plugins]]
-  package = "@netlify/plugin-scheduled-functions"
