@@ -17,8 +17,11 @@ const GEO = {
 export default async (req) => {
   if (req.method !== "POST") return new Response("POST only", { status: 405 });
   const body = await req.json().catch(() => ({}));
-  const origin = (body.origin || "JFK").toUpperCase();
-  const destination = (body.destination || "LHR").toUpperCase();
+  const code = /^[A-Z]{3}$/;
+  let origin = String(body.origin || "JFK").toUpperCase().slice(0,3);
+  let destination = String(body.destination || "LHR").toUpperCase().slice(0,3);
+  if (!code.test(origin)) origin = "JFK";
+  if (!code.test(destination)) destination = "LHR";
   const departure_date = body.departure_date || new Date(Date.now() + 14*86400000).toISOString().slice(0,10);
   const return_date = body.return_date || null;
   const cabin_class = body.cabin_class || "economy";
