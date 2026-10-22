@@ -77,6 +77,14 @@ footer{text-align:center;color:var(--muted);font-size:12px;margin-top:40px}
 <div id="status" class="status"></div>
 </div>
 
+<div class="card">
+<h2>Preferences <span class="badge">optional</span></h2>
+<div class="grid">
+<div><label>Preferred airline</label><input id="prefAirline" placeholder="e.g. British Airways"></div>
+<div><label>Max stops</label><select id="prefStops"><option value="">Any</option><option value="0">Nonstop only</option><option value="1">1 stop max</option></select></div>
+</div>
+</div>
+
 <div id="results"></div>
 
 <div class="card">
@@ -163,7 +171,7 @@ async function search(){
   const status=document.getElementById("status");
   btn.disabled=true; status.textContent="Searching…";
   try{
-    const res=await fetch("/api/search",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({origin:from,destination:to,departure_date:date,cabin_class:cabin,nights})});
+    const res=await fetch("/api/search",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({origin:from,destination:to,departure_date:date,cabin_class:cabin,nights,preferences:{preferred_airline:document.getElementById("prefAirline").value,max_stops:document.getElementById("prefStops").value===""?null:Number(document.getElementById("prefStops").value)}})});
     const data=await res.json();
     status.textContent = data.source==="duffel" ? "Live results" : "Demo results";
     let html = "";
