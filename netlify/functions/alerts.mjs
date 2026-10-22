@@ -2,10 +2,10 @@ import { getStore } from "@netlify/blobs";
 
 const store = getStore("wefindit-users");
 
-export default async () => {
+export default async (req) => {
   const token = Netlify.env.get("DUFFEL_ACCESS_TOKEN");
   const resendKey = Netlify.env.get("RESEND_API_KEY");
-  if (!token || !resendKey) return new Response("Missing env", { status: 200 });
+  if (!token || !resendKey) return Response.json({ error: "Missing env" });
 
   const { blobs } = await store.list();
   let sent = 0;
@@ -58,4 +58,4 @@ async function sendEmail(key, to, route, newPrice, oldPrice) {
   });
 }
 
-export const config = { schedule: "@daily" };
+export const config = { path: "/api/alerts" };
