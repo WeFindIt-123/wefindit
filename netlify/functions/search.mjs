@@ -1,4 +1,5 @@
-// Duffel flights + hotels with preference scoring
+import { getStore } from "@netlify/blobs";
+
 const GEO = {
   JFK:[40.6413,-73.7781], EWR:[40.6895,-74.1745], LGA:[40.7769,-73.8740],
   NYC:[40.7128,-74.0060], LAX:[33.9416,-118.4085], SFO:[37.6213,-122.3790],
@@ -19,10 +20,21 @@ export default async (req) => {
   const origin = (body.origin || "JFK").toUpperCase();
   const destination = (body.destination || "LHR").toUpperCase();
   const departure_date = body.departure_date || new Date(Date.now() + 14*86400000).toISOString().slice(0,10);
+  const return_date = body.return_date || null;
   const cabin_class = body.cabin_class || "economy";
   const nights = Number(body.nights) || 3;
+  const passengers = Math.min(Math.max(Number(body.passengers) || 1, 1), 9);
   const prefs = body.preferences || {};
   const token = Netlify.env.get("DUFFEL_ACCESS_TOKEN");
+
+  try {
+    const stats = getStore("wefindit-stats");
+    const key = "searches";
+    const current = (await stats.get(key, { type: "json" })) || { count: 0 };
+    current.count += 1;
+    current.last = new Date().toISOString();
+    await stats.setJSON(key, current);
+  } catch {}
 
   if (!token) {
     const flights = scoreAndRank(mockFlights(), prefs);
@@ -37,12 +49,12 @@ export default async (req) => {
   };
 
   const [rawFlights, hotels] = await Promise.all([
-    searchFlights(headers, origin, destination, departure_date, cabin_class),
+    searchFlights(headers, origin, destination, departure_date, return_date, cabin_class, passengers),
     searchHotels(headers, destination, departure_date, nights),
   ]);
 
   const flights = scoreAndRank(rawFlights, prefs);
-  return Response.json({ source: "duffel", origin, destination, departure_date, cabin_class, flights, hotels });
+  return Response.json({ source: "duffel", origin, destination, departure_date, return_date, cabin_class, passengers, flights, hotels });
 };
 
 function scoreAndRank(offers, prefs) {
@@ -70,17 +82,21 @@ function preferenceFit(offer, prefs) {
   return Math.min(1, s);
 }
 
-async function searchFlights(headers, origin, destination, date, cabin) {
+async function searchFlights(headers, origin, destination, date, returnDate, cabin, passengers) {
+  const slices = [{ origin, destination, departure_date: date }];
+  if (returnDate) slices.push({ origin: destination, destination: origin, departure_date: returnDate });
+  const pax = Array.from({ length: passengers }, () => ({ type: "adult" }));
   try {
     const resp = await fetch("https://api.duffel.com/air/offer_requests", {
       method: "POST", headers,
-      body: JSON.stringify({ data: { slices: [{ origin, destination, departure_date: date }], cabin_class: cabin, passengers: [{ type: "adult" }] } }),
+      body: JSON.stringify({ data: { slices, cabin_class: cabin, passengers: pax } }),
     });
     if (!resp.ok) return mockFlights();
     const data = await resp.json();
     return (data.data?.offers || []).slice(0, 8).map(o => ({
       id: o.id, price: o.total_amount, currency: o.total_currency,
       airline: o.owner?.name || "Airline", stops: (o.slices?.[0]?.segments?.length || 1) - 1,
+      book_url: `https://app.duffel.com/offers/${o.id}`,
     }));
   } catch { return mockFlights(); }
 }
@@ -114,9 +130,8 @@ async function searchHotels(headers, destination, checkIn, nights) {
 function mockFlights() {
   const b = 380 + Math.floor(Math.random()*200);
   return [
-    { id:"m1", price:String(b), currency:"USD", airline:"Mock Air", stops:0 },
-    { id:"m2", price:String(b+40), currency:"USD", airline:"Demo", stops:1 },
-    { id:"m3", price:String(b+90), currency:"USD", airline:"Budget", stops:0 },
+    { id:"m1", price:String(b), currency:"USD", airline:"Mock Air", stops:0, book_url: null },
+    { id:"m2", price:String(b+40), currency:"USD", airline:"Demo", stops:1, book_url: null },
   ];
 }
 function mockHotels() {
