@@ -45,6 +45,14 @@ button:hover{background:#2563eb}
 footer{border-top:1px solid var(--border);padding:32px 0;text-align:center;color:var(--muted);font-size:13px}
 @media(max-width:700px){.features{grid-template-columns:1fr}.hero h1{font-size:36px}.grid,.grid3{grid-template-columns:1fr}}
 </style>
+<script>
+const params = new URLSearchParams(window.location.search);
+const ref = params.get("ref");
+if (ref) {
+  localStorage.setItem("wefindit_ref", ref);
+  console.log("Source:", ref);
+}
+</script>
 </head>
 <body>
 <div class="container">
