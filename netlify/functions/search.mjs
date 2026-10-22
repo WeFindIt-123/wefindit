@@ -1,3 +1,4 @@
+// Duffel search - token from Netlify env
 export default async (req) => {
   if (req.method !== "POST") {
     return new Response(JSON.stringify({ error: "POST only" }), { status: 405 });
